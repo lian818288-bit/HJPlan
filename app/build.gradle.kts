@@ -31,6 +31,22 @@ android {
         }
     }
 
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/notice.txt",
+                "META-INF/ASL2.0",
+                "META-INF/*.kotlin_module"
+            )
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
