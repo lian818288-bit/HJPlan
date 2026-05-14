@@ -8,8 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/reactivecircles/android-sdk-image:v36.0.0
 
     steps:
       - name: Checkout code
@@ -21,25 +19,43 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android SDK
+        run: |
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --no-daemon --no-parallel
-
-      - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace --no-daemon --no-parallel
+      - name: Build with Gradle
+        uses: gradle/gradle-build-action@v3
+        with:
+          arguments: assembleDebug --stacktrace --info --no-daemon --no-parallel
+          cache-read-only: false
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: HJPlan-debug
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
           if-no-files-found: warn
 
+      - name: Build Release APK
+        if: success()
+        uses: gradle/gradle-build-action@v3
+        with:
+          arguments: assembleRelease --stacktrace --no-daemon --no-parallel
+          cache-read-only: true
+
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: HJPlan-release
           path: app/build/outputs/apk/release/*.apk
