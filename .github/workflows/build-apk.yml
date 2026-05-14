@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/reactivecircles/android-sdk-image:v36.0.0
 
     steps:
       - name: Checkout code
@@ -18,26 +20,21 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Setup Android SDK & build tools
-        uses: android-actions/setup-android@v3
-        continue-on-error: true
-
-      - name: Grant execute permission for gradlew
+      - name: Make gradlew executable
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: ./gradlew assembleDebug --stacktrace --no-daemon --no-parallel
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace --no-daemon
+        run: ./gradlew assembleRelease --stacktrace --no-daemon --no-parallel
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: HJPlan-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
           if-no-files-found: warn
 
@@ -45,6 +42,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: HJPlan-release
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/*.apk
           retention-days: 30
           if-no-files-found: warn
