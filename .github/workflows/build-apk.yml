@@ -22,22 +22,37 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK components
+      - name: Install SDK components & accept licenses
         run: |
+          yes | sdkmanager --licenses
           sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
-          sdkmanager --licenses || true
+
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: ./gradlew assembleDebug --stacktrace --info --no-daemon 2>&1 | tee build-debug.log
 
       - name: Build Release APK
         if: success()
-        run: ./gradlew assembleRelease --stacktrace --no-daemon
+        run: ./gradlew assembleRelease --stacktrace --no-daemon 2>&1 | tee build-release.log
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build-debug.log
+            build-release.log
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Upload Debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: HJPlan-debug
@@ -46,8 +61,8 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload Release APK
-        uses: actions/upload-artifact@v4
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: HJPlan-release
           path: app/build/outputs/apk/release/*.apk
